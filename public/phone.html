@@ -1,19 +1,45 @@
+
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>Phone</title>
+        <title>CJ Phone</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <link rel="icon" type="image/x-icon" href="favicon.ico">
+        <link rel="icon" type="image/x-icon" href="favicon.png">
+        <link rel="stylesheet" type="text/css" href="phone.css">
+
     </head>
     <body>
-        <div class="sidebar">
-            <!--Player List from Discord-->
-            <ul id="playerList">
-            </ul>
+            <div class="sidebar">
+                <!--Player List from Discord-->
+                <p>Players</p>
+                <ul id="playerList">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+        <div id="menu">
+            <div class="main centered">
+                <div class="header">
+                    <h1>CJ Phone</h1>
+                </div>
+                <div class="content">
+                    <button id="Start" disabled>Begin Game</button>
+                    <p id="startText"></p>
+                    <p>Two or more players are required to begin the game.</p>
+                </div>
+            </div>
         </div>
-        <div class="main">
+        <div id="game">
+            <div id="sentence" class="centered">
+                <!--Sentence Selection-->
+                <input type="text" id="sentenceInput" placeholder="Enter a sentence...">
+                <button id="submitSentence" disabled>Submit</button>
+            </div>
+            <div id="drawing">
+                <!--Drawing Area-->
+                <canvas id="canvas" width="400" height="400"></canvas>
+            </div>
         </div>
     </body>
 </html>
-<script src="phone.js"></script>
+<script type="module" src="bundle.js"></script>

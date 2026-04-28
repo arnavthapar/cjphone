@@ -1,38 +1,143 @@
-import { DiscordSDK } from "https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk/+esm"
+import { DiscordSDK } from "@discord/embedded-app-sdk"
+import { io } from "socket.io-client"
 
-const discordSdk = new DiscordSDK(YOUR_CLIENT_ID)
+function addPlayerToList(user) {
+    const list = document.getElementById("playerList")
+    const li = document.createElement("li")
+    li.id = "player-" + user.id
+    li.innerHTML = `
+        <img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png" 
+            width="32" height="32" class="avatar">
+        ${user.username}
+    `
+    li.classList.add("listItem")
+    list.appendChild(li)
+}
+let playerCount = 0
+function updateStartButton() {
+    document.getElementById("Start").disabled = playerCount < 2
+}
+ctx.strokeStyle = "#000000"
+ctx.lineWidth = 3
+ctx.lineCap = "round"
+ctx.lineJoin = "round"
+const canvas = document.getElementById("canvas")
+const ctx = canvas.getContext("2d")
+let drawing = false
+
+// Mouse events
+canvas.addEventListener("mousedown", (e) => {
+    drawing = true
+    ctx.beginPath()
+    ctx.moveTo(e.offsetX, e.offsetY)
+})
+canvas.addEventListener("mousemove", (e) => {
+    if (!drawing) return
+    ctx.lineTo(e.offsetX, e.offsetY)
+    ctx.stroke()
+})
+canvas.addEventListener("mouseup", () => drawing = false)
+canvas.addEventListener("mouseleave", () => drawing = false)
+
+// Touch events for mobile
+canvas.addEventListener("touchstart", (e) => {
+    e.preventDefault()
+    const touch = e.touches[0]
+    const rect = canvas.getBoundingClientRect()
+    drawing = true
+    ctx.beginPath()
+    ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top)
+})
+canvas.addEventListener("touchmove", (e) => {
+    e.preventDefault()
+    if (!drawing) return
+    const touch = e.touches[0]
+    const rect = canvas.getBoundingClientRect()
+    ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top)
+    ctx.stroke()
+})
+canvas.addEventListener("touchend", () => drawing = false)
+const socket = io()
+socket.on("playerJoined", (user) => {
+    addPlayerToList(user)
+    playerCount++
+    updateStartButton()
+})
+// List all players upon joining
+socket.on("playerList", (players) => {
+    const list = document.getElementById("playerList")
+    list.innerHTML = ""
+    players.forEach(user => {
+        addPlayerToList(user);
+        playerCount++
+    })
+    updateStartButton()
+});
+socket.on("playerLeft", (user) => {
+    document.getElementById("player-" + user.id)?.remove()
+    playerCount--
+    updateStartButton()
+    if (playerCount < 2) {
+        document.getElementById("Start").disabled = true
+    }
+})
+socket.on("role", ({ isHost }) => {
+    if (!isHost) {
+        document.getElementById("Start").style.display = "none"
+        document.getElementById("startText").textContent = "Waiting for host to start the game..."
+    }
+})
+let discordSdk
+
+
+discordSdk = new DiscordSDK("1498403668087799958")
+
+if (discordSdk) {
+
+let authenticated = false
 
 async function init() {
-    await discordSdk.ready()
+    try {
+        await discordSdk.ready()
+        const { code } = await discordSdk.commands.authorize({
+            client_id: "1498403668087799958",
+            response_type: "code",
+            state: "",
+            prompt: "none",
+            scope: ["identify", "guilds.members.read"],
+        })
 
-    // Authorize and authenticate
-    const { code } = await discordSdk.commands.authorize({
-        client_id: YOUR_CLIENT_ID,
-        response_type: "code",
-        state: "",
-        prompt: "none",
-        scope: ["identify", "guilds.members.read"],
-    })
+        const response = await fetch("/api/token", {
+            method: "POST",
+            body: JSON.stringify({ code }),
+            headers: { "Content-Type": "application/json" }
+        })
 
-    // Exchange code for token via your backend
-    const response = await fetch("/api/token", {
-        method: "POST",
-        body: JSON.stringify({ code }),
-        headers: { "Content-Type": "application/json" }
-    })
-    const { access_token } = await response.json()
+        const { access_token } = await response.json()
+        
+        let result
+        if (!authenticated) {
+            result = await discordSdk.commands.authenticate({ access_token })
+            authenticated = true
+        }
 
-    await discordSdk.commands.authenticate({ access_token })
+        const currentUserId = result.user.id
+        const { participants } = await discordSdk.commands.getInstanceConnectedParticipants()
+        const currentUser = participants.find(p => p.id === currentUserId) || participants[0]
 
-    // Now get participants
-    const { participants } = await discordSdk.commands.getInstanceConnectedParticipants()
-
-    const list = document.getElementById("playerList")
-    participants.forEach(user => {
-        const li = document.createElement("li")
-        li.textContent = user.username
-        list.appendChild(li)
-    })
+        socket.emit("join", {
+            roomId: discordSdk.instanceId,
+            user: {
+                id: currentUser.id,
+                username: currentUser.global_name || currentUser.username,
+                avatar: currentUser.avatar
+            }
+        })
+    } catch (e) {
+        if (e.code === 4002) return // already authenticated, don't retry
+        console.error("Initialization error:", e)
+        setTimeout(init, 1000)
+    }
 }
-
-init()
+    init()
+}

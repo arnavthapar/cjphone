@@ -1,14 +1,20 @@
 import express from "express"
 import { createServer } from "http"
 import { Server } from "socket.io"
+import { fileURLToPath } from "url"
 
+import { dirname } from "path"
+import path from "path"
+import dotenv from "dotenv"
+dotenv.config({quiet: true})
 const app = express()
 const server = createServer(app)
 const io = new Server(server)
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 app.use(express.json())
 
-// Serve your frontend files
 app.use(express.static("public"))
 
 // Token exchange endpoint for Discord OAuth
@@ -26,19 +32,47 @@ app.post("/api/token", async (req, res) => {
         })
     })
 
-    const { access_token } = await response.json()
-    res.json({ access_token })
+    const text = await response.text()
+    
+    try {
+        const data = JSON.parse(text)
+        res.json(data)
+    } catch (e) {
+        console.error("Failed to parse Discord response:", text)
+        res.status(500).json({ error: text })
+    }
 })
 
-// Socket.io game logic
+const rooms = {}
 io.on("connection", (socket) => {
-    socket.on("join", (roomId) => {
+    let currentRoom = null
+    let currentUser = null
+
+    socket.on("join", ({ roomId, user }) => {
         socket.join(roomId)
+        currentRoom = roomId
+        currentUser = user
+        if (!rooms[roomId]) rooms[roomId] = []
+        const isHost = rooms[roomId].length === 0
+        if (!rooms[roomId].find(u => u.id === user.id)) {
+            rooms[roomId].push(user)
+            socket.broadcast.to(roomId).emit("playerJoined", user)
+        }
+        
+        socket.emit("playerList", rooms[roomId])
+        socket.emit("role", { isHost })
     })
 
-    socket.on("submit", ({ roomId, drawing }) => {
-        // store drawing, check if all players submitted, etc.
+    socket.on("disconnect", () => {
+        if (currentRoom && currentUser && rooms[currentRoom]) {
+            rooms[currentRoom] = rooms[currentRoom].filter(u => u.id !== currentUser.id)
+            io.to(currentRoom).emit("playerLeft", currentUser)
+        }
     })
+})
+
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "/public/phone.html"))
 })
 
 server.listen(3000, () => {

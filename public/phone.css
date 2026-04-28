@@ -1,12 +1,80 @@
 body {
+    background: #1e1e2e;
+    color: white;
     display: flex;
     flex-direction: row;
+    margin: 0;
+    height: 100vh;
+    font-family: sans-serif;
 }
 
 .sidebar {
-    flex-grow: 1;
+    width: 120px;
+    background: #2a2a3e;
+    padding: 8px;
+    padding-top: 16px;
+    overflow-y: auto;
+    font-size: 12px;
 }
 
 .main {
-    flex-grow: 2;
+    flex-direction: column;
+    flex: 1;
+    padding: 10px;
+}
+
+#canvas {
+    background: white;
+    border: 1px solid #ccc;
+    touch-action: none;
+}
+.centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#playerList {
+    padding-top: 10px;
+}
+
+.avatar {
+    border-radius:50%;
+    vertical-align:middle;
+    margin-right:8px;
+}
+.listItem {
+    margin-bottom:8px;
+}
+
+/* Buttons */
+button {
+    background-color: #5865f2;
+    color: white;
+    font-size: 15px;
+    font-family: inherit;
+    border: none;
+    border-radius: 3px;
+    padding: 10px 16px;
+    cursor: pointer;
+    margin-bottom: 0;
+    font-weight: 500;
+    transition: background-color 0.17s ease;
+    box-shadow: #3c45a5 0px 2px 4px 0px;
+}
+
+button:hover {
+    background-color: #4752c4;
+}
+
+button:active {
+    background-color: #3c45a5;
+}
+button:disabled {
+    background-color: #363636;
+    color:lightgrey;
+    box-shadow: #262626 0px 2px 4px 0px;
+    opacity: 0.5;
+    cursor: not-allowed;
 }
