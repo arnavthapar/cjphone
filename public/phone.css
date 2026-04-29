@@ -17,6 +17,27 @@ body {
     font-size: 12px;
 }
 
+#sentence {
+    width: 100%;
+}
+#charCount {
+    color: #888;
+    font-size: 12px;
+    margin: 4px 0 10px 0;
+    align-self: flex-end;
+    margin-right: 10%;
+}
+#sentenceInput {
+    margin: 8px;
+    font-size: 1em;
+    width: 80%;
+}
+#game {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+}
 .main {
     flex-direction: column;
     flex: 1;
@@ -34,6 +55,11 @@ body {
     align-items: center;
     justify-content: center;
 }
+#colorPicker {
+    display: grid;
+    grid-template-columns: repeat(5, 30px);
+    grid-gap: 5px;
+}
 
 #playerList {
     padding-top: 10px;
@@ -48,7 +74,21 @@ body {
     margin-bottom:8px;
 }
 
+.horizontal {
+    display: flex;
+    flex-direction: row;
+}
+.vertical {
+    display: flex;
+    flex-direction: column;
+}
+#drawingSidebar {
+    margin: 8px;
+}
 /* Buttons */
+#submitDrawing {
+    margin-top: 16px;;
+}
 button {
     background-color: #5865f2;
     color: white;
@@ -77,4 +117,81 @@ button:disabled {
     box-shadow: #262626 0px 2px 4px 0px;
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.blackButton {
+    background-color:black;
+    box-shadow: #000 0px 2px 4px 0px;
+}
+.blackButton:hover {
+    background-color: #222;
+}
+.blackButton:active {
+    background-color: #000;
+}
+.redButton {
+    background-color: red;
+    box-shadow: #8a2424 0px 2px 4px 0px;
+}
+.redButton:hover {
+    background-color: #8a2424;
+}
+.redButton:active {
+    background-color: #6b1c1c;
+}
+.blueButton {
+    background-color: blue;
+    box-shadow: #24468a 0px 2px 4px 0px;
+}
+.blueButton:hover {
+    background-color: #24468a;
+}
+.blueButton:active {
+    background-color: #1c346b;
+}
+.greenButton {
+    background-color: green;
+    box-shadow: #248a3c 0px 2px 4px 0px;
+}
+.greenButton:hover {
+    background-color: darkgreen;
+}
+.greenButton:active {
+    background-color: #1c6b2e;
+}
+.yellowButton {
+    background-color: yellow;
+    color: black;
+    box-shadow: #8a7a24 0px 2px 4px 0px;
+}
+.yellowButton:hover {
+    background-color: #8a7a24;
+}
+.yellowButton:active {
+    background-color: #6b5c1c;
+}
+.purpleButton {
+    background-color: purple;
+    box-shadow: #8a248a 0px 2px 4px 0px;
+}
+.purpleButton:hover {
+    background-color: #6b248a;
+}
+.purpleButton:active {
+    background-color: #4b1c6b;
+}
+.whiteButton {
+    background-color: white;
+    color: black;
+}
+.whiteButton:hover {
+    background-color: #ddd;
+    box-shadow: #ccc 0px 2px 4px 0px;
+}
+.whiteButton:active {
+    background-color: #bbb;
+}
+
+.force-hidden {
+    display: none !important;
 }

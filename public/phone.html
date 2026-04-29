@@ -29,15 +29,30 @@
                 </div>
             </div>
         </div>
-        <div id="game">
+        <div id="game" class="centered force-hidden">
             <div id="sentence" class="centered">
                 <!--Sentence Selection-->
-                <input type="text" id="sentenceInput" placeholder="Enter a sentence...">
-                <button id="submitSentence" disabled>Submit</button>
+                <input type="text" id="sentenceInput" maxlength="100" placeholder="Enter a sentence...">
+                <p id="charCount">0/100 characters used</p>
+                <button id="submitSentence">Submit</button>
+                <p id="submitText"></p>
             </div>
-            <div id="drawing">
+            <div id="drawing" class="horizontal force-hidden">
                 <!--Drawing Area-->
-                <canvas id="canvas" width="400" height="400"></canvas>
+                <div class="vertical" id="drawingSidebar">
+                    <p id="drawingPrompt"></p>
+                    <div id="colorPicker">
+                        <button class="color-btn blackButton" data-color="black" title="black"> </button>
+                        <button class="color-btn redButton" data-color="red" title="red"> </button>
+                        <button class="color-btn blueButton" data-color="blue" title="blue"> </button>
+                        <button class="color-btn greenButton" data-color="green" title="green"> </button>
+                        <button class="color-btn yellowButton" data-color="yellow" title="yellow"> </button>
+                        <button class="color-btn purpleButton" data-color="purple" title="purple"> </button>
+                        <button class="color-btn whiteButton" data-color="white" title="white"> </button>
+                    </div>
+                    <button id="submitDrawing">Submit Drawing</button>
+                </div>
+                <canvas id="canvas" width="350" height="350"></canvas>
             </div>
         </div>
     </body>
