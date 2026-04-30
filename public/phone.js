@@ -25,12 +25,12 @@ let drawing = false
 document.getElementById("submitSentence").addEventListener("click", () => {
     const sentence = document.getElementById("sentenceInput").value.trim()
     if (sentence) {
-        const response = socket.emit("submitSentence", {roomId: discordSdk.instanceId, sentence})
-        if (response) {
-            document.getElementById("submitText").textContent = "Waiting for other players..."
-            document.getElementById("submitSentence").disabled = true
-        } else {
+        if (sentence.length > 100 || sentence.length === 0) {
             document.getElementById("submitText").textContent = "Sentence must be between 1 and 100 characters."
+        } else {
+            socket.emit("submitSentence", {roomId: discordSdk.instanceId, sentence})
+            document.getElementById("submitText").textContent = "Waiting for other players..."
+        document.getElementById("submitSentence").disabled = true
         }
     } else {
         document.getElementById("submitText").textContent = "Please enter a sentence."
@@ -42,6 +42,12 @@ function checkHost(isHost) {
         document.getElementById("startText").textContent = "Waiting for host to start the game..."
     }
 }
+document.getElementById("submitDrawing").addEventListener("click", () => {
+    const dataURL = canvas.toDataURL('image/png')
+    socket.emit("submitDrawing", {roomId: discordSdk.instanceId, drawing: dataURL})
+    document.getElementById("submitDrawing").disabled = true
+    document.getElementById("submitDrawingText").textContent = "Waiting for other players..."
+})
 let color = "black"
 // Mouse events
 canvas.addEventListener("mousedown", (e) => {
@@ -84,15 +90,80 @@ socket.on("playerJoined", (user) => {
     updateStartButton()
 })
 
-socket.on("allSentencesSubmitted", (sentences) => {
+socket.on("drawThis", (sentence) => {
+    document.getElementById("submitDrawingText").textContent = ""
+    document.getElementById("guess").classList.add("force-hidden")
     document.getElementById("submitText").textContent = ""
     document.getElementById("sentenceInput").value = ""
     document.getElementById("sentence").classList.add("force-hidden")
     const drawingDiv = document.getElementById("drawing")
     drawingDiv.classList.remove("force-hidden")
-})
-socket.on("drawThis", (sentence) => {
     document.getElementById("drawingPrompt").textContent = `Draw: "${sentence}"`
+
+})
+socket.on("gameOver", (chains) => {
+    document.getElementById("drawing").classList.add("force-hidden")
+    document.getElementById("guess").classList.add("force-hidden")
+    document.getElementById("sentence").classList.add("force-hidden")
+    document.getElementById("gameOver").classList.remove("force-hidden")
+
+    const container = document.getElementById("chains")
+    container.innerHTML = ""
+
+    chains.forEach(chain => {
+        const chainDiv = document.createElement("div")
+        chainDiv.classList.add("chain")
+
+        const title = document.createElement("h3")
+        title.textContent = `${chain.originalUser.username}'s chain`
+        chainDiv.appendChild(title)
+
+        chain.entries.forEach(entry => {
+            const entryDiv = document.createElement("div")
+            entryDiv.classList.add("chain-entry")
+
+            const author = document.createElement("p")
+            author.classList.add("chain-author")
+            author.textContent = entry.user.username
+
+            if (entry.type === "sentence") {
+                const text = document.createElement("p")
+                text.classList.add("chain-text")
+                text.textContent = `"${entry.text}"`
+                entryDiv.appendChild(author)
+                entryDiv.appendChild(text)
+            } else {
+                const img = document.createElement("img")
+                img.src = entry.image
+                img.classList.add("chain-image")
+                entryDiv.appendChild(author)
+                entryDiv.appendChild(img)
+            }
+
+            chainDiv.appendChild(entryDiv)
+        })
+
+        container.appendChild(chainDiv)
+    })
+})
+socket.on("guessThis", (image) => {
+    document.getElementById("drawing").classList.add("force-hidden")
+    document.getElementById("guess").classList.remove("force-hidden")
+    const img = document.getElementById("referenceImage")
+    img.src = image
+    img.style.display = "block"
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    document.getElementById("submitDrawing").disabled = false
+    document.getElementById("submitGuess").disabled = false
+    document.getElementById("submitGuessText").textContent = ""
+})
+document.getElementById("submitGuess").addEventListener("click", () => {
+    const guess = document.getElementById("guessInput").value.trim()
+    if (guess) {
+        socket.emit("submitSentence", {roomId: discordSdk.instanceId, sentence: guess})
+        document.getElementById("submitGuess").disabled = true
+        document.getElementById("submitGuessText").textContent = "Waiting for other players..."
+    }
 })
 // List all players upon joining
 socket.on("playerList", (players) => {

@@ -44,15 +44,29 @@
                     <div id="colorPicker">
                         <button class="color-btn blackButton" data-color="black" title="black"> </button>
                         <button class="color-btn redButton" data-color="red" title="red"> </button>
-                        <button class="color-btn blueButton" data-color="blue" title="blue"> </button>
-                        <button class="color-btn greenButton" data-color="green" title="green"> </button>
                         <button class="color-btn yellowButton" data-color="yellow" title="yellow"> </button>
+                        <button class="color-btn greenButton" data-color="green" title="green"> </button>
+                        <button class="color-btn blueButton" data-color="blue" title="blue"> </button>
                         <button class="color-btn purpleButton" data-color="purple" title="purple"> </button>
                         <button class="color-btn whiteButton" data-color="white" title="white"> </button>
                     </div>
                     <button id="submitDrawing">Submit Drawing</button>
+                    <p id="submitDrawingText"></p>
                 </div>
-                <canvas id="canvas" width="350" height="350"></canvas>
+            <canvas id="canvas" width="350" height="350"></canvas>
+            </div>
+            <div id="guess" class="horizontal force-hidden">
+                <div class="vertical">
+                    <p>What does this drawing show?</p>
+                    <input type="text" id="guessInput" maxlength="100" placeholder="Enter your guess...">
+                    <button id="submitGuess">Submit Guess</button>
+                    <p id="submitGuessText"></p>
+                </div>
+                <img id="referenceImage" alt="Drawing to guess">
+            </div>
+            <div id="gameOver" class="centered force-hidden">
+                <h2>Results</h2>
+                <div id="chains"></div>
             </div>
         </div>
     </body>

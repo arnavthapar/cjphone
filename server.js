@@ -44,7 +44,9 @@ app.post("/api/token", async (req, res) => {
 })
 const gameStates = {} // track game state per room
 const sentences = {}
+const drawings = {}
 const rooms = {}
+const chains = {}
 io.on("connection", (socket) => {
     let currentRoom = null
     let currentUser = null
@@ -77,6 +79,12 @@ io.on("connection", (socket) => {
         } else {
             io.to(currentRoom).emit("playerLeft", currentUser)
         }
+        if (rooms[currentRoom].length === 0) {
+            delete rooms[currentRoom]
+            delete gameStates[currentRoom]
+            delete sentences[currentRoom]
+        }
+
     }
 })
 
@@ -85,40 +93,94 @@ io.on("connection", (socket) => {
         if (rooms[roomId][0].id !== currentUser.id) return
         if (rooms[roomId].length < 2) return
         if (gameStates[roomId]) return
-        
-        gameStates[roomId] = {phase: "sentence"}
+        chains[roomId] = []
+        gameStates[roomId] = {phase: "sentence", round:0, maxRounds: rooms[roomId].length}
         io.to(roomId).emit("gameStarted")
     })
 
     socket.on("submitSentence", ({roomId, sentence}) => {
-        if (!gameStates[roomId]) return
-        if (gameStates[roomId].phase !== "sentence") return
-        if (sentence.length === 0 || sentence.length > 100) return
-        // Store sentences and also store who submitted them for later attribution
-        if (!sentences[roomId]) sentences[roomId] = []
-        sentences[roomId].push({user: currentUser, text: sentence})
-        // Check if all players have submitted
-        if (sentences[roomId].length >= rooms[roomId].length) {
-            gameStates[roomId].phase = "drawing"
+    if (!gameStates[roomId]) return
+    if (gameStates[roomId].phase !== "sentence") return
+    if (sentence.length === 0 || sentence.length > 100) return
+    if (!sentences[roomId]) sentences[roomId] = []
+    if (sentences[roomId].find(s => s.user.id === currentUser.id)) return
 
-            const rotated = [...sentences[roomId].slice(1), sentences[roomId][0]]
-            sentences[roomId] = rotated
+    sentences[roomId].push({user: currentUser, text: sentence})
 
-            gameStates[roomId].assignments = sentences[roomId].map(s => s.user.id)
+    if (sentences[roomId].length >= rooms[roomId].length) {
+        gameStates[roomId].phase = "drawing"
 
-            rooms[roomId].forEach((user, i) => {
-                const userSocket = [...io.sockets.sockets.values()].find(s => s.currentUser?.id === user.id)
-                if (userSocket) {
-                    userSocket.emit("drawThis", sentences[roomId][i].text)
+        const ordered = rooms[roomId].map(user =>
+            sentences[roomId].find(s => s.user.id === user.id)
+        )
+
+        if (gameStates[roomId].round === 0) {
+            // build initial chains in player order BEFORE rotating
+            ordered.forEach(s => {
+                chains[roomId].push({ originalUser: s.user, entries: [{ type: "sentence", user: s.user, text: s.text }] })
+            })
+        }
+
+        const rotated = [...ordered.slice(1), ordered[0]]
+        sentences[roomId] = rotated
+
+        if (gameStates[roomId].round > 0) {
+            rotated.forEach((s, i) => {
+                if (chains[roomId][i]) {
+                    chains[roomId][i].entries.push({ type: "sentence", user: s.user, text: s.text })
                 }
             })
-
-            io.to(roomId).emit("allSentencesSubmitted", sentences[roomId])
         }
-    })
+
+        rooms[roomId].forEach((user, i) => {
+            const userSocket = [...io.sockets.sockets.values()].find(s => s.currentUser?.id === user.id)
+            if (userSocket) {
+                userSocket.emit("drawThis", sentences[roomId][i].text)
+            }
+        })
+        drawings[roomId] = []
+    }
+})
     socket.on("submitDrawing", ({roomId, drawing}) => {
         if (!gameStates[roomId]) return
         if (gameStates[roomId].phase !== "drawing") return
+        // Store drawings and also store who submitted them for later attribution
+        if (!drawings[roomId]) drawings[roomId] = []
+        if (drawings[roomId].find(s => s.user.id === currentUser.id)) return
+        drawings[roomId].push({user: currentUser, text: drawing, image: drawing})
+        // Check if all players have submitted
+        if (drawings[roomId].length >= rooms[roomId].length) {
+            gameStates[roomId].phase = "sentence"
+            const ordered = rooms[roomId].map(user => 
+                drawings[roomId].find(d => d.user.id === user.id)
+            )
+            const rotated = [...ordered.slice(1), ordered[0]]
+            drawings[roomId] = rotated
+            rotated.forEach((d, i) => {
+                if (chains[roomId][i]) {
+                    chains[roomId][i].entries.push({ type: "drawing", user: d.user, image: d.image })
+                }
+            })
+            rooms[roomId].forEach((user, i) => {
+                const userSocket = [...io.sockets.sockets.values()].find(s => s.currentUser?.id === user.id)
+                if (userSocket) {
+                    userSocket.emit("guessThis", drawings[roomId][i].image)
+                }
+            })
+            sentences[roomId] = []
+            gameStates[roomId].round++
+
+            if (gameStates[roomId].round >= gameStates[roomId].maxRounds - 1) {
+                // game over, everyone has seen their chain come back around
+                gameStates[roomId].phase = "ended"
+
+                io.to(roomId).emit("gameOver", chains[roomId])
+                delete chains[roomId]
+                sentences[roomId] = []
+                drawings[roomId] = []
+                return
+            }
+        }
     })
 })
 
