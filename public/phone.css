@@ -61,6 +61,11 @@ body {
     grid-gap: 5px;
 }
 
+#toolPicker {
+    margin-top: 8px;
+}
+
+
 #playerList {
     padding-top: 10px;
 }

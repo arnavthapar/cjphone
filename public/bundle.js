@@ -12985,6 +12985,45 @@ function updateStartButton() {
   document.getElementById("Start").disabled = playerCount < 2;
 }
 var currentUserId = null;
+function colorsMatch(a, b, tolerance = 0) {
+  return Math.abs(a[0] - b[0]) <= tolerance && Math.abs(a[1] - b[1]) <= tolerance && Math.abs(a[2] - b[2]) <= tolerance && Math.abs(a[3] - b[3]) <= tolerance;
+}
+function cssColorToRgba(color2) {
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = tempCanvas.height = 1;
+  const tempCtx = tempCanvas.getContext("2d");
+  tempCtx.fillStyle = color2;
+  tempCtx.fillRect(0, 0, 1, 1);
+  const d = tempCtx.getImageData(0, 0, 1, 1).data;
+  return [d[0], d[1], d[2], d[3]];
+}
+function floodFill(canvas2, startX, startY, fillColor) {
+  const ctx2 = canvas2.getContext("2d");
+  const { width, height } = canvas2;
+  const imageData = ctx2.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  const idx = (x, y) => (y * width + x) * 4;
+  const i = idx(startX, startY);
+  const target = [data[i], data[i + 1], data[i + 2], data[i + 3]];
+  const fill = cssColorToRgba(fillColor);
+  if (colorsMatch(target, fill)) return;
+  const stack = [[startX, startY]];
+  const visited = new Uint8Array(width * height);
+  while (stack.length) {
+    const [x, y] = stack.pop();
+    if (x < 0 || x >= width || y < 0 || y >= height) continue;
+    if (visited[y * width + x]) continue;
+    const pi = idx(x, y);
+    if (!colorsMatch([data[pi], data[pi + 1], data[pi + 2], data[pi + 3]], target)) continue;
+    data[pi] = fill[0];
+    data[pi + 1] = fill[1];
+    data[pi + 2] = fill[2];
+    data[pi + 3] = fill[3];
+    visited[y * width + x] = 1;
+    stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+  }
+  ctx2.putImageData(imageData, 0, 0);
+}
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 var drawing = false;
@@ -13014,15 +13053,21 @@ document.getElementById("submitDrawing").addEventListener("click", () => {
   document.getElementById("submitDrawing").disabled = true;
   document.getElementById("submitDrawingText").textContent = "Waiting for other players...";
 });
+var tool = "brush";
 var color = "black";
 canvas.addEventListener("mousedown", (e) => {
   drawing = true;
+  if (tool === "fill") {
+    floodFill(canvas, e.offsetX, e.offsetY, color);
+    return;
+  }
   ctx.beginPath();
   ctx.strokeStyle = color;
   ctx.moveTo(e.offsetX, e.offsetY);
 });
 canvas.addEventListener("mousemove", (e) => {
   if (!drawing) return;
+  if (tool === "fill") return;
   ctx.lineTo(e.offsetX, e.offsetY);
   ctx.stroke();
 });
@@ -13033,6 +13078,10 @@ canvas.addEventListener("touchstart", (e) => {
   const touch = e.touches[0];
   const rect = canvas.getBoundingClientRect();
   drawing = true;
+  if (tool === "fill") {
+    floodFill(canvas, Math.floor(touch.clientX - rect.left), Math.floor(touch.clientY - rect.top), color);
+    return;
+  }
   ctx.beginPath();
   ctx.strokeStyle = color;
   ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
@@ -13041,6 +13090,7 @@ canvas.addEventListener("touchmove", (e) => {
   e.preventDefault();
   if (!drawing) return;
   const touch = e.touches[0];
+  if (tool === "fill") return;
   const rect = canvas.getBoundingClientRect();
   ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
   ctx.stroke();
@@ -13154,11 +13204,16 @@ if (discordSdk) {
   document.querySelectorAll(".color-btn").forEach((el) => {
     el.addEventListener("click", () => {
       color = el.dataset.color;
-      if (el.dataset.color === "white") {
+      if (color === "white") {
         ctx.lineWidth = 10;
       } else {
         ctx.lineWidth = 2;
       }
+    });
+  });
+  document.querySelectorAll(".tool-btn").forEach((el) => {
+    el.addEventListener("click", () => {
+      tool = el.dataset.tool;
     });
   });
   socket.on("gameStarted", () => {

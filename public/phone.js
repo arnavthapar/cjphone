@@ -18,6 +18,66 @@ function updateStartButton() {
     document.getElementById("Start").disabled = playerCount < 2
 }
 let currentUserId = null
+function colorsMatch(a, b, tolerance = 0) {
+    return Math.abs(a[0] - b[0]) <= tolerance &&
+            Math.abs(a[1] - b[1]) <= tolerance &&
+            Math.abs(a[2] - b[2]) <= tolerance &&
+            Math.abs(a[3] - b[3]) <= tolerance;
+    }
+
+function cssColorToRgba(color) {
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = tempCanvas.height = 1;
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCtx.fillStyle = color;
+    tempCtx.fillRect(0, 0, 1, 1);
+    const d = tempCtx.getImageData(0, 0, 1, 1).data;
+    return [d[0], d[1], d[2], d[3]];
+}
+function floodFill(canvas, startX, startY, fillColor) {
+    const ctx = canvas.getContext('2d');
+    const { width, height } = canvas;
+
+    // Get all pixel data at once (fast — one read operation)
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const data = imageData.data;
+
+    const idx = (x, y) => (y * width + x) * 4;
+
+    // Get the target color (color to replace)
+    const i = idx(startX, startY);
+    const target = [data[i], data[i+1], data[i+2], data[i+3]];
+
+    const fill = cssColorToRgba(fillColor);
+
+    if (colorsMatch(target, fill)) return;
+
+    // BFS stack
+    const stack = [[startX, startY]];
+    const visited = new Uint8Array(width * height);
+
+    while (stack.length) {
+        const [x, y] = stack.pop();
+
+        if (x < 0 || x >= width || y < 0 || y >= height) continue;
+        if (visited[y * width + x]) continue;
+
+        const pi = idx(x, y);
+        if (!colorsMatch([data[pi], data[pi+1], data[pi+2], data[pi+3]], target)) continue;
+
+        data[pi]  = fill[0];
+        data[pi + 1] = fill[1];
+        data[pi + 2] = fill[2];
+        data[pi + 3] = fill[3];
+        visited[y * width + x] = 1;
+
+        // Push 4 neighbors
+        stack.push([x+1, y], [x-1, y], [x, y+1], [x, y-1]);
+    }
+
+    // Write all changes back in one operation
+    ctx.putImageData(imageData, 0, 0);
+}
 
 const canvas = document.getElementById("canvas")
 const ctx = canvas.getContext("2d")
@@ -48,16 +108,22 @@ document.getElementById("submitDrawing").addEventListener("click", () => {
     document.getElementById("submitDrawing").disabled = true
     document.getElementById("submitDrawingText").textContent = "Waiting for other players..."
 })
+let tool = "brush"
 let color = "black"
 // Mouse events
 canvas.addEventListener("mousedown", (e) => {
     drawing = true
+    if (tool === "fill") {
+        floodFill(canvas, e.offsetX, e.offsetY, color)
+        return
+    }
     ctx.beginPath()
     ctx.strokeStyle = color;
     ctx.moveTo(e.offsetX, e.offsetY)
 })
 canvas.addEventListener("mousemove", (e) => {
     if (!drawing) return
+    if (tool === "fill" ) return
     ctx.lineTo(e.offsetX, e.offsetY)
     ctx.stroke()
 })
@@ -70,6 +136,10 @@ canvas.addEventListener("touchstart", (e) => {
     const touch = e.touches[0]
     const rect = canvas.getBoundingClientRect()
     drawing = true
+    if (tool === "fill" ) {
+        floodFill(canvas, Math.floor(touch.clientX - rect.left), Math.floor(touch.clientY - rect.top), color)
+        return
+    }
     ctx.beginPath()
     ctx.strokeStyle = color;
     ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top)
@@ -78,6 +148,7 @@ canvas.addEventListener("touchmove", (e) => {
     e.preventDefault()
     if (!drawing) return
     const touch = e.touches[0]
+    if (tool === "fill" ) return
     const rect = canvas.getBoundingClientRect()
     ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top)
     ctx.stroke()
@@ -208,11 +279,16 @@ document.getElementById("Start").addEventListener("click", () => {
 document.querySelectorAll(".color-btn").forEach(el => {
     el.addEventListener("click", () => {
         color = el.dataset.color
-        if (el.dataset.color === "white") {
+        if (color === "white") {
             ctx.lineWidth = 10
         } else {
             ctx.lineWidth = 2
         }
+    })
+})
+document.querySelectorAll(".tool-btn").forEach(el => {
+    el.addEventListener("click", () => {
+        tool = el.dataset.tool
     })
 })
 socket.on("gameStarted", () => {
