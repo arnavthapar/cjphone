@@ -36,6 +36,7 @@ app.post("/api/token", async (req, res) => {
     
     try {
         const data = JSON.parse(text)
+        console.log(data)
         res.json(data)
     } catch (e) {
         console.error("Failed to parse Discord response:", text)
