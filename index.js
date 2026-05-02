@@ -114,19 +114,16 @@ io.on("connection", (socket) => {
     if (sentences[roomId].length >= rooms[roomId].length) {
         gameStates[roomId].phase = "drawing"
 
-        const ordered = rooms[roomId].map(user =>
-            sentences[roomId].find(s => s.user.id === user.id)
-        )
-        const rotated = [...ordered.slice(1), ordered[0]]
+        const rotated = [...sentences[roomId].slice(1), sentences[roomId][0]]
         sentences[roomId] = rotated
         if (gameStates[roomId].round === 0) {
-            // build initial chains in player order BEFORE rotating
             rotated.forEach(s => {
                 chains[roomId].push({ originalUser: s.user, entries: [{ type: "sentence", user: s.user, text: s.text }] })
             })
         }
 
         if (gameStates[roomId].round > 0) {
+            const rotated = [...sentences[roomId].slice(1), sentences[roomId][0]]
             rotated.forEach((s, i) => {
                 if (chains[roomId][i]) {
                     chains[roomId][i].entries.push({ type: "sentence", user: s.user, text: s.text })
@@ -166,11 +163,8 @@ io.on("connection", (socket) => {
         let ordered;
         if (drawings[roomId].length >= rooms[roomId].length) {
             gameStates[roomId].phase = "sentence"
-            ordered = rooms[roomId].map(user =>
-                drawings[roomId].find(d => d.user.id === user.id)
-            )
-            const rotated = [...ordered.slice(1), ordered[0]]
-            ordered.forEach((d, i) => {
+            const rotated = [...drawings[roomId].slice(1), drawings[roomId][0]]
+            rotated.forEach((d, i) => {
                 if (chains[roomId][i]) {
                     chains[roomId][i].entries.push({ type: "drawing", user: d.user, image: d.image })
                 }
