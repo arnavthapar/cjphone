@@ -26,17 +26,17 @@ app.post("/api/token", async (req, res) => {
         headers: {"Content-Type": "application/x-www-form-urlencoded"},
         body: new URLSearchParams({
             client_id: process.env.CLIENT_ID,
-            client_secret:  process.env.CLIENT_SECRET,
+            client_secret: process.env.CLIENT_SECRET,
             grant_type: "authorization_code",
             code,
         })
     })
-    console.log(JSON.stringify(process.env.CLIENT_ID))
 
     const text = await response.text()
 
     try {
         const data = JSON.parse(text)
+        console.log("Discord token response:", data)
         res.json(data)
     } catch (e) {
         console.error("Failed to parse Discord response:", text)
