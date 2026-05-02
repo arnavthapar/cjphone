@@ -126,7 +126,7 @@ io.on("connection", (socket) => {
         }
 
         if (gameStates[roomId].round > 0) {
-            rotated.forEach((s, i) => {
+            ordered.forEach((s, i) => {
                 if (chains[roomId][i]) {
                     chains[roomId][i].entries.push({ type: "sentence", user: s.user, text: s.text })
                 }
