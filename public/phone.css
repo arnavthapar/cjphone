@@ -32,6 +32,9 @@ body {
     font-size: 1em;
     width: 80%;
 }
+#guessInput {
+    margin-top:8px;
+}
 #game {
     display: flex;
     flex: 1;
