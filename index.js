@@ -125,9 +125,6 @@ io.on("connection", (socket) => {
             })
         }
 
-        const rotated = [...ordered.slice(1), ordered[0]]
-        sentences[roomId] = rotated
-
         if (gameStates[roomId].round > 0) {
             rotated.forEach((s, i) => {
                 if (chains[roomId][i]) {
@@ -135,6 +132,9 @@ io.on("connection", (socket) => {
                 }
             })
         }
+        const rotated = [...ordered.slice(1), ordered[0]]
+        sentences[roomId] = rotated
+
 
         rooms[roomId].forEach((user, i) => {
             const userSocket = [...io.sockets.sockets.values()].find(s => s.currentUser?.id === user.id)
