@@ -144,6 +144,16 @@ io.on("connection", (socket) => {
         })
         drawings[roomId] = []
     }
+    if (gameStates[roomId].round >= gameStates[roomId].maxRounds - 1) {
+        // game over, everyone has seen their chain come back around
+        gameStates[roomId].phase = "ended"
+
+        io.to(roomId).emit("gameOver", chains[roomId])
+        delete chains[roomId]
+        sentences[roomId] = []
+        drawings[roomId] = []
+        return
+    }
 })
     socket.on("submitDrawing", ({roomId, drawing}) => {
         if (!gameStates[roomId]) return
@@ -153,18 +163,19 @@ io.on("connection", (socket) => {
         if (drawings[roomId].find(s => s.user.id === currentUser.id)) return
         drawings[roomId].push({user: currentUser, text: drawing, image: drawing})
         // Check if all players have submitted
+        let ordered;
         if (drawings[roomId].length >= rooms[roomId].length) {
             gameStates[roomId].phase = "sentence"
-            const ordered = rooms[roomId].map(user =>
+            ordered = rooms[roomId].map(user =>
                 drawings[roomId].find(d => d.user.id === user.id)
             )
-            const rotated = [...ordered.slice(1), ordered[0]]
-            drawings[roomId] = rotated
-            rotated.forEach((d, i) => {
+            ordered.forEach((d, i) => {
                 if (chains[roomId][i]) {
                     chains[roomId][i].entries.push({ type: "drawing", user: d.user, image: d.image })
                 }
             })
+            const rotated = [...ordered.slice(1), ordered[0]]
+            drawings[roomId] = rotated
             rooms[roomId].forEach((user, i) => {
                 const userSocket = [...io.sockets.sockets.values()].find(s => s.currentUser?.id === user.id)
                 if (userSocket) {
