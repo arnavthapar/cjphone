@@ -117,10 +117,11 @@ io.on("connection", (socket) => {
         const ordered = rooms[roomId].map(user =>
             sentences[roomId].find(s => s.user.id === user.id)
         )
-
+        const rotated = [...ordered.slice(1), ordered[0]]
+        sentences[roomId] = rotated
         if (gameStates[roomId].round === 0) {
             // build initial chains in player order BEFORE rotating
-            ordered.forEach(s => {
+            rotated.forEach(s => {
                 chains[roomId].push({ originalUser: s.user, entries: [{ type: "sentence", user: s.user, text: s.text }] })
             })
         }
@@ -132,8 +133,7 @@ io.on("connection", (socket) => {
                 }
             })
         }
-        const rotated = [...ordered.slice(1), ordered[0]]
-        sentences[roomId] = rotated
+        gameStates[roomId].round++
 
 
         rooms[roomId].forEach((user, i) => {
@@ -144,7 +144,7 @@ io.on("connection", (socket) => {
         })
         drawings[roomId] = []
     }
-    if (gameStates[roomId].round >= gameStates[roomId].maxRounds - 1) {
+    if (gameStates[roomId].round >= gameStates[roomId].maxRounds) {
         // game over, everyone has seen their chain come back around
         gameStates[roomId].phase = "ended"
 
@@ -169,12 +169,12 @@ io.on("connection", (socket) => {
             ordered = rooms[roomId].map(user =>
                 drawings[roomId].find(d => d.user.id === user.id)
             )
-            ordered.forEach((d, i) => {
+            const rotated = [...ordered.slice(1), ordered[0]]
+            rotated.forEach((d, i) => {
                 if (chains[roomId][i]) {
                     chains[roomId][i].entries.push({ type: "drawing", user: d.user, image: d.image })
                 }
             })
-            const rotated = [...ordered.slice(1), ordered[0]]
             drawings[roomId] = rotated
             rooms[roomId].forEach((user, i) => {
                 const userSocket = [...io.sockets.sockets.values()].find(s => s.currentUser?.id === user.id)
@@ -185,7 +185,7 @@ io.on("connection", (socket) => {
             sentences[roomId] = []
             gameStates[roomId].round++
 
-            if (gameStates[roomId].round >= gameStates[roomId].maxRounds - 1) {
+            if (gameStates[roomId].round >= gameStates[roomId].maxRounds) {
                 // game over, everyone has seen their chain come back around
                 gameStates[roomId].phase = "ended"
 
