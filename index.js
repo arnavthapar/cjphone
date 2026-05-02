@@ -33,16 +33,17 @@ app.post("/api/token", async (req, res) => {
     })
 
     const text = await response.text()
-    
+
     try {
         const data = JSON.parse(text)
+        console.log(data)
         res.json(data)
     } catch (e) {
         console.error("Failed to parse Discord response:", text)
         res.status(500).json({error: text})
     }
 })
-const gameStates = {} // track game state per room
+const gameStates = {} // Track game state per room
 const sentences = {}
 const drawings = {}
 const rooms = {}
@@ -62,7 +63,7 @@ io.on("connection", (socket) => {
             rooms[roomId].push(user)
             socket.broadcast.to(roomId).emit("playerJoined", user)
         }
-        
+
         socket.emit("playerList", rooms[roomId])
         socket.emit("role", {isHost})
     })
@@ -71,9 +72,9 @@ io.on("connection", (socket) => {
     if (currentRoom && currentUser && rooms[currentRoom]) {
         const wasHost = rooms[currentRoom][0]?.id === currentUser.id
         rooms[currentRoom] = rooms[currentRoom].filter(u => u.id !== currentUser.id)
-        
+
         if (wasHost && rooms[currentRoom].length > 0) {
-            // tell the new host they're now host
+            // Tell the new host they're now host
             io.to(currentRoom).emit("playerLeft", currentUser)
             io.to(currentRoom).emit("newHost", rooms[currentRoom][0])
         } else {
@@ -151,7 +152,7 @@ io.on("connection", (socket) => {
         // Check if all players have submitted
         if (drawings[roomId].length >= rooms[roomId].length) {
             gameStates[roomId].phase = "sentence"
-            const ordered = rooms[roomId].map(user => 
+            const ordered = rooms[roomId].map(user =>
                 drawings[roomId].find(d => d.user.id === user.id)
             )
             const rotated = [...ordered.slice(1), ordered[0]]
