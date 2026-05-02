@@ -36,6 +36,10 @@ app.post("/api/token", async (req, res) => {
 
     try {
         const data = JSON.parse(text)
+        if (data.error) {
+            console.error("Discord token exchange error:", data)
+            return res.status(400).json({error: data.error_description || "Unknown error"})
+        }
         res.json(data)
     } catch (e) {
         console.error("Failed to parse Discord response:", text)
