@@ -170,7 +170,7 @@ io.on("connection", (socket) => {
                 drawings[roomId].find(d => d.user.id === user.id)
             )
             const rotated = [...ordered.slice(1), ordered[0]]
-            rotated.forEach((d, i) => {
+            ordered.forEach((d, i) => {
                 if (chains[roomId][i]) {
                     chains[roomId][i].entries.push({ type: "drawing", user: d.user, image: d.image })
                 }
