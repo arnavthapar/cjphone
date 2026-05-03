@@ -192,6 +192,7 @@ socket.on("drawThis", (sentence) => {
 
 })
 socket.on("gameOver", (chains) => {
+    gamePhase = "results"
     document.getElementById("drawing").classList.add("force-hidden")
     document.getElementById("guess").classList.add("force-hidden")
     document.getElementById("sentence").classList.add("force-hidden")
@@ -331,6 +332,7 @@ document.querySelectorAll(".tool-btn").forEach(el => {
     })
 })
 socket.on("gameStarted", () => {
+    gamePhase = "playing"
     document.getElementById("menu").style.display = "none"
     document.getElementById("game").classList.remove("force-hidden")
     await discordSdk.commands.setActivity({
