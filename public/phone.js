@@ -153,12 +153,31 @@ canvas.addEventListener("touchmove", (e) => {
     ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top)
     ctx.stroke()
 })
+function getRichPresence() {
+    const states = {
+        lobby: "In a lobby",
+        playing: "Round in progress",
+        results: "Viewing results"
+    }
+    discordSdk.commands.setActivity({
+        activity: {
+            type: 0,
+            details: "Playing CjPhone",
+            state: states[gamePhase],
+            party: {
+                id: discordSdk.instanceId,
+                size: [playerCount, Math.max(5, playerCount)]
+            }
+        }
+    })
+}
 canvas.addEventListener("touchend", () => drawing = false)
 const socket = io()
 socket.on("playerJoined", (user) => {
     addPlayerToList(user)
     playerCount++
     updateStartButton()
+    getRichPresence()
 })
 
 socket.on("drawThis", (sentence) => {
@@ -216,7 +235,22 @@ socket.on("gameOver", (chains) => {
 
         container.appendChild(chainDiv)
     })
+    await discordSdk.commands.setActivity({
+        activity: {
+            type: 0,
+            details: "Playing CjPhone",
+            state: "Viewing results",
+            timestamps: {
+                start: Date.now()
+            },
+            party: {
+                id: discordSdk.instanceId,
+                size: [playerCount, 5]
+            }
+        }
+    })
 })
+
 socket.on("guessThis", (image) => {
     document.getElementById("drawing").classList.add("force-hidden")
     document.getElementById("guess").classList.remove("force-hidden")
@@ -225,6 +259,7 @@ socket.on("guessThis", (image) => {
     img.style.display = "block"
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     document.getElementById("submitDrawing").disabled = false
+    document.getElementById("guessInput").disabled = false
     document.getElementById("submitGuess").disabled = false
     document.getElementById("submitGuessText").textContent = ""
 })
@@ -232,10 +267,12 @@ document.getElementById("submitGuess").addEventListener("click", () => {
     const guess = document.getElementById("guessInput").value.trim()
     if (guess) {
         socket.emit("submitSentence", {roomId: discordSdk.instanceId, sentence: guess})
+        document.getElementById("guessInput").disabled = true
         document.getElementById("submitGuess").disabled = true
         document.getElementById("submitGuessText").textContent = "Waiting for other players..."
     }
 })
+
 // List all players upon joining
 socket.on("playerList", (players) => {
     const list = document.getElementById("playerList")
@@ -260,6 +297,8 @@ socket.on("playerLeft", (user, isHost) => {
     if (playerCount < 2) {
         document.getElementById("Start").disabled = true
     }
+    getRichPresence()
+
 })
 socket.on("role", ({ isHost }) => {
     checkHost(isHost)
@@ -294,6 +333,20 @@ document.querySelectorAll(".tool-btn").forEach(el => {
 socket.on("gameStarted", () => {
     document.getElementById("menu").style.display = "none"
     document.getElementById("game").classList.remove("force-hidden")
+    await discordSdk.commands.setActivity({
+        activity: {
+            type: 0,
+            details: "Playing CjPhone",
+            state: "Currenly playing",
+            timestamps: {
+                start: Date.now()
+            },
+            party: {
+                id: discordSdk.instanceId,
+                size: [playerCount, 5]
+            }
+        }
+    })
 })
 document.getElementById("sentenceInput").addEventListener("input", (e) => {
     const len = e.target.value.length
@@ -333,6 +386,20 @@ async function init() {
                 id: currentUser.id,
                 username: currentUser.global_name || currentUser.username,
                 avatar: currentUser.avatar
+            }
+        })
+        await discordSdk.commands.setActivity({
+            activity: {
+                type: 0, // Playing
+                details: "Playing CjPhone",
+                state: "In a lobby",
+                timestamps: {
+                    start: Date.now()
+                },
+                party: {
+                    id: discordSdk.instanceId,
+                    size: [playerCount, 5]
+                }
             }
         })
     } catch (e) {
