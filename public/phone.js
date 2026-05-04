@@ -191,7 +191,7 @@ socket.on("drawThis", (sentence) => {
     document.getElementById("drawingPrompt").textContent = `Draw: "${sentence}"`
 
 })
-socket.on("gameOver", (chains) => {
+socket.on("gameOver", async (chains) => {
     gamePhase = "results"
     document.getElementById("drawing").classList.add("force-hidden")
     document.getElementById("guess").classList.add("force-hidden")
