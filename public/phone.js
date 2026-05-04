@@ -331,7 +331,7 @@ document.querySelectorAll(".tool-btn").forEach(el => {
         tool = el.dataset.tool
     })
 })
-socket.on("gameStarted", () => {
+socket.on("gameStarted", async () => {
     gamePhase = "playing"
     document.getElementById("menu").style.display = "none"
     document.getElementById("game").classList.remove("force-hidden")
