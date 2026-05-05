@@ -16,7 +16,6 @@ const __dirname = dirname(__filename)
 app.use(express.json())
 
 app.use(express.static("public"))
-
 // Token exchange endpoint for Discord OAuth
 app.post("/api/token", async (req, res) => {
     const {code} = req.body

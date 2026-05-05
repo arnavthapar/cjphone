@@ -332,7 +332,7 @@ document.querySelectorAll(".tool-btn").forEach(el => {
     })
 })
 socket.on("gameStarted", () => {
-    ////gamePhase = "playing"
+    /// = "playing"
     document.getElementById("menu").style.display = "none"
     document.getElementById("game").classList.remove("force-hidden")
     /*await discordSdk.commands.setActivity({
