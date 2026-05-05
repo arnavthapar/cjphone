@@ -13157,6 +13157,7 @@ socket.on("guessThis", (image) => {
   img.style.display = "block";
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   document.getElementById("submitDrawing").disabled = false;
+  document.getElementById("guessInput").disabled = false;
   document.getElementById("submitGuess").disabled = false;
   document.getElementById("submitGuessText").textContent = "";
 });
@@ -13164,6 +13165,7 @@ document.getElementById("submitGuess").addEventListener("click", () => {
   const guess = document.getElementById("guessInput").value.trim();
   if (guess) {
     socket.emit("submitSentence", { roomId: discordSdk.instanceId, sentence: guess });
+    document.getElementById("guessInput").disabled = true;
     document.getElementById("submitGuess").disabled = true;
     document.getElementById("submitGuessText").textContent = "Waiting for other players...";
   }
@@ -13198,9 +13200,6 @@ var discordSdk;
 discordSdk = new DiscordSDK("1498403668087799958");
 if (discordSdk) {
   let authenticated = false;
-  document.getElementById("Start").addEventListener("click", () => {
-    socket.emit("startGame", { roomId: discordSdk.instanceId });
-  });
   document.querySelectorAll(".color-btn").forEach((el) => {
     el.addEventListener("click", () => {
       color = el.dataset.color;
@@ -13227,6 +13226,9 @@ if (discordSdk) {
   async function init() {
     try {
       await discordSdk.ready();
+      document.getElementById("Start").addEventListener("click", () => {
+        socket.emit("startGame", { roomId: discordSdk.instanceId });
+      });
       const { code } = await discordSdk.commands.authorize({
         client_id: "1498403668087799958",
         response_type: "code",

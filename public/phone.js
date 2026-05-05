@@ -17,6 +17,8 @@ let playerCount = 0
 function updateStartButton() {
     document.getElementById("Start").disabled = playerCount < 2
 }
+//let gamePhase = "lobby"
+
 let currentUserId = null
 function colorsMatch(a, b, tolerance = 0) {
     return Math.abs(a[0] - b[0]) <= tolerance &&
@@ -153,7 +155,7 @@ canvas.addEventListener("touchmove", (e) => {
     ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top)
     ctx.stroke()
 })
-function getRichPresence() {
+/*function getRichPresence() {
     const states = {
         lobby: "In a lobby",
         playing: "Round in progress",
@@ -163,21 +165,21 @@ function getRichPresence() {
         activity: {
             type: 0,
             details: "Playing CjPhone",
-            state: states[gamePhase],
+            state: states[//gamePhase],
             party: {
                 id: discordSdk.instanceId,
                 size: [playerCount, Math.max(5, playerCount)]
             }
         }
     })
-}
+}*/
 canvas.addEventListener("touchend", () => drawing = false)
 const socket = io()
 socket.on("playerJoined", (user) => {
     addPlayerToList(user)
     playerCount++
     updateStartButton()
-    getRichPresence()
+    //getRichPresence()
 })
 
 socket.on("drawThis", (sentence) => {
@@ -192,7 +194,7 @@ socket.on("drawThis", (sentence) => {
 
 })
 socket.on("gameOver", (chains) => {
-    gamePhase = "results"
+    //gamePhase = "results"
     document.getElementById("drawing").classList.add("force-hidden")
     document.getElementById("guess").classList.add("force-hidden")
     document.getElementById("sentence").classList.add("force-hidden")
@@ -236,7 +238,7 @@ socket.on("gameOver", (chains) => {
 
         container.appendChild(chainDiv)
     })
-    await discordSdk.commands.setActivity({
+    /*await discordSdk.commands.setActivity({
         activity: {
             type: 0,
             details: "Playing CjPhone",
@@ -249,7 +251,7 @@ socket.on("gameOver", (chains) => {
                 size: [playerCount, 5]
             }
         }
-    })
+    })*/
 })
 
 socket.on("guessThis", (image) => {
@@ -298,7 +300,7 @@ socket.on("playerLeft", (user, isHost) => {
     if (playerCount < 2) {
         document.getElementById("Start").disabled = true
     }
-    getRichPresence()
+    //getRichPresence()
 
 })
 socket.on("role", ({ isHost }) => {
@@ -313,9 +315,7 @@ if (discordSdk) {
 
 let authenticated = false
 // Track start button
-document.getElementById("Start").addEventListener("click", () => {
-    socket.emit("startGame", { roomId: discordSdk.instanceId })
-})
+
 document.querySelectorAll(".color-btn").forEach(el => {
     el.addEventListener("click", () => {
         color = el.dataset.color
@@ -332,10 +332,10 @@ document.querySelectorAll(".tool-btn").forEach(el => {
     })
 })
 socket.on("gameStarted", () => {
-    gamePhase = "playing"
+    ////gamePhase = "playing"
     document.getElementById("menu").style.display = "none"
     document.getElementById("game").classList.remove("force-hidden")
-    await discordSdk.commands.setActivity({
+    /*await discordSdk.commands.setActivity({
         activity: {
             type: 0,
             details: "Playing CjPhone",
@@ -343,12 +343,12 @@ socket.on("gameStarted", () => {
             timestamps: {
                 start: Date.now()
             },
-            party: {
+            party: {let //gamePhase = "lobby
                 id: discordSdk.instanceId,
                 size: [playerCount, 5]
             }
         }
-    })
+    })*/
 })
 document.getElementById("sentenceInput").addEventListener("input", (e) => {
     const len = e.target.value.length
@@ -357,6 +357,9 @@ document.getElementById("sentenceInput").addEventListener("input", (e) => {
 async function init() {
     try {
         await discordSdk.ready()
+        document.getElementById("Start").addEventListener("click", () => {
+            socket.emit("startGame", { roomId: discordSdk.instanceId })
+        })
         const { code } = await discordSdk.commands.authorize({
             client_id: "1498403668087799958",
             response_type: "code",
@@ -390,7 +393,7 @@ async function init() {
                 avatar: currentUser.avatar
             }
         })
-        await discordSdk.commands.setActivity({
+        /*await discordSdk.commands.setActivity({
             activity: {
                 type: 0, // Playing
                 details: "Playing CjPhone",
@@ -403,7 +406,7 @@ async function init() {
                     size: [playerCount, 5]
                 }
             }
-        })
+        })*/
     } catch (e) {
         if (e.code === 4002) return // already authenticated, don't retry
         console.error("Initialization error:", e)
